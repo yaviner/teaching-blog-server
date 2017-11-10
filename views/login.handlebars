@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Login</title>    
+        <link rel="stylesheet" href="/styles/login.css" />
+        <link href="https://fonts.googleapis.com/css?family=Amatic+SC|Lato" rel="stylesheet">
+    </head>
+    <body>
+        <div id="login-wrap">
+            <form method="POST" class="login-form">
+                <h1 class="logo">The Food Observer</h1>
+                {{#if loginMessage}}
+                <div class="errorMessage">
+                    {{loginMessage}}
+                </div>
+                {{/if}}
+                <div class="input-wrap">
+                    <label for="username">username</label>
+                    <input type="text" name="username" />
+                </div>
+                <div class="input-wrap">
+                    <label for="password">password</label>
+                    <input type="password" name="password" />
+                </div>
+                <button type="submit">Log In</button>
+            </form>
+        </div>
+    </body>
+</html>

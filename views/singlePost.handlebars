@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>The Food Observer</title>
+        <link rel="stylesheet" href="/styles/styles-advanced.css" />
+        <link href="https://fonts.googleapis.com/css?family=Amatic+SC|Lato" rel="stylesheet">
+    </head>
+    <body>
+        <header>
+            <h1>The Food Observer</h1>
+        </header>
+        <nav>
+            <ul>
+                <li><a href="/">Posts</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="/contact">Contact</a></li>
+            </ul>
+        </nav>
+        <main>
+            <!-- Loop through the 'articles' in the object passed to the templating engine -->
+            <!-- Properties of each article are accessible within this #each block simply
+            by referencing their name in curly braces -->
+            <article>
+                <div class="post-image-wrapper">
+                    <img src="{{article.image}}" class="post-image" />
+                </div>
+                <div class="post-content">
+                    <time>{{article.date}}</time>
+                    <h2>{{article.title}}</h2>
+                    <summary>{{article.summary}}</summary>
+                    <a href="/blog/{{article.id}}" class="read-more">Read more ></a>
+                </div>
+            </article>
+        </main>
+    </body>
+</html>
