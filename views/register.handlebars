@@ -1,14 +1,20 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Login</title>    
+        <title>Register</title>    
         <link rel="stylesheet" href="/styles/login.css" />
+        <link rel="stylesheet" href="/styles/forms.css" />
         <link href="https://fonts.googleapis.com/css?family=Amatic+SC|Lato" rel="stylesheet">
     </head>
     <body>
         <div id="login-wrap">
-            <form method="POST" class="login-form">
+            <form method="POST" class="login-form form">
                 <h1 class="logo">The Food Observer</h1>
+                {{#if registerMessage}}
+                <div class="errorMessage">
+                    {{registerMessage}}
+                </div>
+                {{/if}}
                 <div class="input-wrap">
                     <label for="username">username</label>
                     <input type="text" name="username" />
@@ -17,7 +23,7 @@
                     <label for="password">password</label>
                     <input type="password" name="password" />
                 </div>
-                <button type="submit">Log In</button>
+                <button type="submit">Register</button>
             </form>
         </div>
     </body>

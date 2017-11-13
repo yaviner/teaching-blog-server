@@ -2,7 +2,16 @@
 Barebones example blog with authentication, backed by a MySQL database.
 
 ## Prerequisites
-You must have a MySQL database available to connect to. _More info coming soon..._
+You must have a MySQL database available to connect to. It should have the following tables, at minimum:
+
+### users
+| id  | username | hash    | salt    |
+| --- | -------- | ------- | ----    |
+
+### posts
+| id  | title | summary | fulltext | image | date |
+| --- | ----- | ------- | -------- | ----- | ---- |
+
 ## Installing
 `npm install`
 

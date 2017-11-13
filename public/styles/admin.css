@@ -1,0 +1,35 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    padding: 0;
+    margin: 0;
+    font-family: 'Lato', 'Arial', sans-serif;
+    font-size: 18px;
+}
+
+body {
+    background-color: #eaeaef;
+}
+
+.logo {
+    font-family: 'Amatic SC', cursive;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    text-align: center;
+    width: 100%;
+}
+
+#admin-wrap {
+    width: 60vw;
+    min-width: 600px;
+    margin: 0 auto;
+}
+
+.post-form {
+    background-color: #fff;
+    padding: 15px;
+    box-shadow: 0 0 8px 0 rgba(0,0,0,0.15);
+}

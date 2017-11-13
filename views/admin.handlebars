@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Admin</title>    
+        <link rel="stylesheet" href="/styles/admin.css" />
+        <link rel="stylesheet" href="/styles/forms.css" />
+        <link href="https://fonts.googleapis.com/css?family=Amatic+SC|Lato" rel="stylesheet">
+    </head>
+    <body>
+        <div id="admin-wrap">
+            <h1 class="logo">The Food Observer</h1>
+            <h1>Welcome, {{user.username}}, to the Super Secret Admin Area!</h1>
+            {{#if adminMessage}}
+                <div class="errorMessage">
+                    {{adminMessage}}
+                </div>
+            {{/if}}
+            <form method="POST" class="post-form form" action="/article">
+                <h2>Add New Post</h2>
+                <div class="input-wrap">
+                    <label for="title">Post Title</label>
+                    <input type="text" name="title" />
+                </div>
+                <div class="input-wrap">
+                    <label for="summary">Summary</label>
+                    <textarea name="summary"></textarea>
+                </div>
+                <div class="input-wrap">
+                    <label for="fulltext">Full Text</label>
+                    <textarea name="fulltext" rows="10"></textarea>
+                </div>
+                <div class="input-wrap">
+                    <label for="image">Post Image</label>
+                    <input type="text" name="image" />
+                </div>
+                <button type="submit">Add Post</button>
+            </form>
+        </div>
+    </body>
+</html>

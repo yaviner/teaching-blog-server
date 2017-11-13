@@ -15,6 +15,7 @@ const db = mysql.createConnection({
     password: process.env.DB_PASS,
     database: process.env.DB_NAME
 });
+const bcrypt = require('bcryptjs');
 
 /************************
 *   IMPORT MIDDLEWARE   *
@@ -48,39 +49,55 @@ app.use(session({
     saveUninitialized: true,
     resave: true
 }))
-app.use(flash());
+app.use(flash()); // Allow messages to be saved in req object for use in templates when rendering
 app.use(bodyParser.urlencoded({ extended: false })); // Parse form submissions
 app.use(bodyParser.json()); // parse application/json
 app.use(express.static('public')); 
 app.engine('handlebars', hbs.engine); // Register the handlebars templating engine
 app.set('view engine', 'handlebars'); // Set handlebars as our default template engine
 
+/************************
+*    PASSPORT CONFIG    *
+*************************/
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Authentication using username and password
 passport.use(new LocalStrategy({
-        passReqToCallback: true
+        passReqToCallback: true // Passes req to the function, so we can put messages there if needed
     },
     function (req, username, password, done) {
-        const q = `SELECT * FROM users WHERE username = ? AND password = ?;`
-        db.query(q, [username, password], function (err, results, fields) {
-            console.log(results);
-            if (err) {
-                return done(err);
-            }
+        const q = `SELECT * FROM users WHERE username = ?;`
+        db.query(q, [username], function (err, results, fields) {
+            if (err) return done(err);
+
+            // User, if it exists, will be the first row returned
+            // There should also only _be_ one row
             const user = results[0];
             if (!user) {
-                return done(null, false, req.flash('loginMessage', 'Incorrect username and/or password'));
+                return done(null, false, req.flash('loginMessage', 'User not found'));
             }
-            return done(null, user);
+
+            // User exists, check password against hash
+            const userHash = user.hash;
+            bcrypt.compare(password, userHash, function(err, matches) {
+                if (!matches) {
+                    return done(null, false, req.flash('loginMessage', 'Incorrect username and/or password'));
+                }
+                // Otherwise, they match, send back the user
+                return done(null, user);
+            });
         })
     }
 ))
 
+// Tells passport what information to include in the session
+// Just need ID for lookup later
 passport.serializeUser(function(user, done) {
     done(null, user.id);
 });
 
+// Tells passport how to get user from information in session
 passport.deserializeUser(function(id, done) {
     const q = `SELECT * FROM users WHERE id = ?;`
     db.query(q, [id], function (err, results, fields) {
@@ -150,12 +167,46 @@ app.get('/register', function (req, res) {
     if (user) {
         res.redirect('/admin');
     } else {
-        res.render('register');
+        res.render('register', { registerMessage: req.flash('registerMessage') })
     }
 });
 
 app.post('/register', function (req, res) {
-    res.send('Registration Flow. TODO');
+    const username = req.body.username;
+    const pass = req.body.password;
+    if (!username || !pass) {
+        req.flash('registerMessage', 'Username and password are required.')
+        return res.redirect('/register');
+    }
+    // Check if user exists, first
+    const checkExists = `SELECT * FROM users WHERE username = ?`
+    db.query(checkExists, [username], function (err, results, fields) {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Something bad happened...'); // Important: Don't execute other code
+        }
+        if (results[0]) {
+            req.flash('registerMessage', 'That username is already taken.');
+            return res.redirect('/register');
+        }
+        // Otherwise, user doesn't exist yet, let's create them!
+        
+        // Generate salt and pass for the user
+        bcrypt.genSalt(10, function (err, salt) {
+            if (err) throw err;
+            bcrypt.hash(pass, salt, function (err, hash) {
+                if (err) throw err;
+                // Add user to database with username, hash, and salt
+                const q = `INSERT INTO users(id, username, hash, salt) VALUES (null, ?, ?, ?)`;
+                db.query(q, [username, hash, salt], function (err, results, fields) {
+                    if (err) console.error(err);
+                    console.log(results);
+                    req.flash('registerMessage', 'Account created successfully.');
+                    res.redirect('/register');
+                })
+            })
+        });
+    })
 });
 
 app.get('/logout', function (req, res) {
@@ -167,34 +218,38 @@ app.get('/logout', function (req, res) {
 // Logged In Functionality
 //
 
-app.get('/admin', function (req, res) {
+app.get('/admin', requireLoggedIn, function (req, res) {
     const user = req.user;
-    console.log('admin', user);
-    if (!user) {
-        res.redirect('/login');
-    } else {
-        res.send('ADMIN PAGE. TODO');
-    }
+    res.render('admin', { user: user } )
 });
 
 // Add new post
-app.post('/article', function (req, res) {
+app.post('/article', requireLoggedIn, function (req, res) {
     // One style of escaping
-    const title = mysql.escape(req.body.title);
-    const summary = mysql.escape(req.body.summary);
-    const fulltext = mysql.escape(req.body.fulltext);
-    const image = mysql.escape(req.body.image);
+    const title = req.body.title;
+    const summary = req.body.summary;
+    const fulltext = req.body.fulltext;
+    const image = req.body.image;
     
-    const q = `INSERT INTO posts VALUES (null, ${title}, ${summary}, ${fulltext}, ${image}, NOW())`
-    db.query(q, function (err, results, fields) {
+    const q = `INSERT INTO posts VALUES (null, ?, ?, ?, ?, NOW())`
+    db.query(q, [title, summary, fulltext, image], function (err, results, fields) {
         if (err) {
             console.error(err);
-            res.status(500).send('Failed. Oops.');
+            return res.status(500).send('Failed. Oops.');
         } else {
-            res.send('Success!');
+            req.flash('adminMessage', 'Post added successfully!');
+            return res.redirect('/admin');
         }
     })
 });
+
+function requireLoggedIn(req, res, next) {
+    const user = req.user;
+    if (!user) {
+        return res.status(401).send('Not authorized.')
+    }
+    next();
+}
 
 // 404 handler
 app.use(function (req, res, next) {
