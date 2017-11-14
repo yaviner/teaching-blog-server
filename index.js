@@ -196,9 +196,9 @@ app.post('/register', function (req, res) {
             if (err) throw err;
             bcrypt.hash(pass, salt, function (err, hash) {
                 if (err) throw err;
-                // Add user to database with username, hash, and salt
-                const q = `INSERT INTO users(id, username, hash, salt) VALUES (null, ?, ?, ?)`;
-                db.query(q, [username, hash, salt], function (err, results, fields) {
+                // Add user to database with username and hash
+                const q = `INSERT INTO users(id, username, hash) VALUES (null, ?, ?)`;
+                db.query(q, [username, hash], function (err, results, fields) {
                     if (err) console.error(err);
                     console.log(results);
                     req.flash('registerMessage', 'Account created successfully.');
