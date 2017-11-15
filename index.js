@@ -220,7 +220,7 @@ app.get('/logout', function (req, res) {
 
 app.get('/admin', requireLoggedIn, function (req, res) {
     const user = req.user;
-    res.render('admin', { user: user } )
+    res.render('admin', { user: user, adminMessage: req.flash.adminMessage } )
 });
 
 // Add new post
