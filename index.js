@@ -9,7 +9,7 @@ const moment = require('moment');
 const mysql = require('mysql');
 // Set up database connection
 const db = mysql.createConnection({
-    host: 'localhost',
+    host: process.env.DB_HOST,
     port: 3306,
     user: process.env.DB_USER,  // Environment variable. Start app like: 'DB_USER=app DB_PASS=test nodemond index.js'
     password: process.env.DB_PASS,
