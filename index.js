@@ -1,30 +1,30 @@
 const express = require('express'); // Import Express
 const app = express(); // Instantiate Express
 
-/************************
-* REGULAR DEPENDENCIES  *
-*************************/
+/*****************************************
+* REGULAR (non-middleware) DEPENDENCIES  *
+*****************************************/
 
-const moment = require('moment');
-const mysql = require('mysql');
+const moment = require('moment'); // Date parsing library
+const mysql = require('mysql'); // Can create connections to MySQL
 // Set up database connection
 const db = mysql.createConnection({
     host: process.env.DB_HOST,
     port: 3306,
-    user: process.env.DB_USER,  // Environment variable. Start app like: 'DB_USER=app DB_PASS=test nodemond index.js'
+    user: process.env.DB_USER,  // Environment variable. Start app like: 'DB_USER=app DB_PASS=test nodemond index.js' OR use .env
     password: process.env.DB_PASS,
     database: process.env.DB_NAME
 });
 const bcrypt = require('bcryptjs');
 
-/************************
-*   IMPORT MIDDLEWARE   *
-*************************/
+/*******************************************
+*   IMPORT MIDDLEWARE AND EXPRESS HELPERS  *
+*******************************************/
 
-const session = require('express-session');
-const bodyParser = require('body-parser');
-const exphbs = require('express-handlebars'); 
-// Set up handlebars with a simple date formatting helper
+const session = require('express-session'); // Used to create, set, and update cookies to maintain user sessions
+const bodyParser = require('body-parser'); // Used to parse incoming POSTed data
+const exphbs = require('express-handlebars');  // Templating engine
+// Set up handlebars with a custom simple date formatting helper
 const hbs = exphbs.create({
     helpers: {
         formatDate: function (date) {
@@ -34,7 +34,7 @@ const hbs = exphbs.create({
 })
 
 const logger = require('./middleware/logger');
-const passport = require('passport');
+const passport = require('passport'); // Authentication middleware
 const LocalStrategy = require('passport-local').Strategy;
 const flash = require('express-flash');
 
@@ -43,6 +43,8 @@ const flash = require('express-flash');
 *************************/
 
 app.use(logger.log); // Log all the things
+// Initialize and configure Express sessions
+// These settings are OK for us
 app.use(session({ 
     secret: 'ha8hWp,yoZF',  // random characters for secret
     cookie: { maxAge: 60000 }, // cookie expires after some time
@@ -52,39 +54,46 @@ app.use(session({
 app.use(flash()); // Allow messages to be saved in req object for use in templates when rendering
 app.use(bodyParser.urlencoded({ extended: false })); // Parse form submissions
 app.use(bodyParser.json()); // parse application/json
-app.use(express.static('public')); 
+app.use(express.static('public')); // Static files will use the 'public' folder as their root
 app.engine('handlebars', hbs.engine); // Register the handlebars templating engine
 app.set('view engine', 'handlebars'); // Set handlebars as our default template engine
 
 /************************
 *    PASSPORT CONFIG    *
 *************************/
-app.use(passport.initialize());
-app.use(passport.session());
+app.use(passport.initialize()); // Needed to use Passport at all
+app.use(passport.session()); // Needed to allow for persistent sessions with passport
 
-// Authentication using username and password
+// Configure authentication using username and password
+// In all callback functions that we use with passport we will expect a last argument, 'done'
+// 'done' is analagous to 'next' in middleware (and of course we could name it 'next')
 passport.use(new LocalStrategy({
-        passReqToCallback: true // Passes req to the function, so we can put messages there if needed
+        passReqToCallback: true // Passes req to the callback function, so we can put messages there if needed
     },
     function (req, username, password, done) {
+        // Find the user based off their username
         const q = `SELECT * FROM users WHERE username = ?;`
         db.query(q, [username], function (err, results, fields) {
             if (err) return done(err);
 
             // User, if it exists, will be the first row returned
-            // There should also only _be_ one row
-            const user = results[0];
+            // There should also only _be_ one row, provided usernames are unique in the app (and they should be!)
+            const user = results[0]
+
+            // 'done' here is looking for the following arguments: error, user, and a message or callback
             if (!user) {
-                return done(null, false, req.flash('loginMessage', 'User not found'));
+                return done(null, false, req.flash('loginMessage', 'User not found')); // req.flash stores a temporary key/value
             }
 
             // User exists, check password against hash
-            const userHash = user.hash;
+            const userHash = user.hash; // Grab the hash of the user
+            // Hash and compare the provided password with the stored hash.
+            // This is an async function, so we have to use a callback to receive the results and continue
             bcrypt.compare(password, userHash, function(err, matches) {
                 if (!matches) {
                     return done(null, false, req.flash('loginMessage', 'Incorrect username and/or password'));
                 }
-                // Otherwise, they match, send back the user
+                // Otherwise, they match -- success! -- send passport the user (see: serializeUser)
                 return done(null, user);
             });
         })
@@ -92,16 +101,18 @@ passport.use(new LocalStrategy({
 ))
 
 // Tells passport what information to include in the session
+// This will be run after authentication
 // Just need ID for lookup later
 passport.serializeUser(function(user, done) {
     done(null, user.id);
 });
 
 // Tells passport how to get user from information in session
+// This will run on every request for which session data exists in a cookie.
 passport.deserializeUser(function(id, done) {
     const q = `SELECT * FROM users WHERE id = ?;`
     db.query(q, [id], function (err, results, fields) {
-        done(err, results[0])
+        done(err, results[0]) // results[0] will be stored _in req.user_ for use in later middleware
     });
 })
 
@@ -148,6 +159,7 @@ app.get('/blog/:postid', function (req, res) {
 app.get('/login', function (req, res) {
     const user = req.user;
     if (user) {
+        // If we already have a user, don't let them see the login page, just send them to the admin!
         res.redirect('/admin');
     } else {
         res.render('login', { loginMessage: req.flash('loginMessage') })
@@ -155,6 +167,7 @@ app.get('/login', function (req, res) {
 });
 
 app.post('/login', 
+    // In this case, invoke the local authentication strategy.
     passport.authenticate('local', {
         successRedirect: '/admin',
         failureRedirect: '/login',
@@ -217,7 +230,7 @@ app.get('/logout', function (req, res) {
 //
 // Logged In Functionality
 //
-
+// All arguments after the route path ('/admin') are middleware – we can actually have multiple defined for one route!
 app.get('/admin', requireLoggedIn, function (req, res) {
     const user = req.user;
     res.render('admin', { user: user, adminMessage: req.flash.adminMessage } )
