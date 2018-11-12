@@ -12,7 +12,7 @@ const db = mysql.createConnection({
     host: process.env.DB_HOST,
     port: 3306,
     user: process.env.DB_USER,  // Environment variable. Start app like: 'DB_USER=app DB_PASS=test nodemond index.js' OR use .env
-    password: process.env.DB_PASS,
+    password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME
 });
 const bcrypt = require('bcryptjs');
@@ -138,7 +138,7 @@ app.get('/', function (req, res) {
 });
 
 // Individual blog post
-app.get('/blog/:postid', function (req, res) {
+app.get('/blog/post/:postid', function (req, res) {
     const postId = req.params.postid;
     const q = `SELECT * FROM posts WHERE id = ?`; // Fill in the blanks style escaping
     db.query(q, [postId], function (err, results, fields) {
@@ -213,7 +213,6 @@ app.post('/register', function (req, res) {
                 const q = `INSERT INTO users(id, username, hash) VALUES (null, ?, ?)`;
                 db.query(q, [username, hash], function (err, results, fields) {
                     if (err) console.error(err);
-                    console.log(results);
                     req.flash('registerMessage', 'Account created successfully.');
                     res.redirect('/register');
                 })
@@ -241,11 +240,11 @@ app.post('/article', requireLoggedIn, function (req, res) {
     // One style of escaping
     const title = req.body.title;
     const summary = req.body.summary;
-    const fulltext = req.body.fulltext;
+    const fulltext = req.body.full_text;
     const image = req.body.image;
     
-    const q = `INSERT INTO posts VALUES (null, ?, ?, ?, ?, NOW())`
-    db.query(q, [title, summary, fulltext, image], function (err, results, fields) {
+    const q = `INSERT INTO posts(id, title, time, summary, full_text, image, author) VALUES (null, ?, NOW(), ?, ?, ?, ?)`
+    db.query(q, [title, summary, fulltext, image, req.user.id], function (err, results, fields) {
         if (err) {
             console.error(err);
             return res.status(500).send('Failed. Oops.');
@@ -259,7 +258,7 @@ app.post('/article', requireLoggedIn, function (req, res) {
 function requireLoggedIn(req, res, next) {
     const user = req.user;
     if (!user) {
-        return res.status(401).send('Not authorized.')
+        return res.status(401).redirect('/login')
     }
     next();
 }

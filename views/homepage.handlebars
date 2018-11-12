@@ -6,16 +6,7 @@
         <link href="https://fonts.googleapis.com/css?family=Amatic+SC|Lato" rel="stylesheet">
     </head>
     <body>
-        <header>
-            <h1>The Food Observer</h1>
-        </header>
-        <nav>
-            <ul>
-                <li><a href="/blog">Posts</a></li>
-                <li><a href="/about">About</a></li>
-                <li><a href="/contact">Contact</a></li>
-            </ul>
-        </nav>
+        {{> header}}
         <main>
             <!-- Loop through the 'articles' in the object passed to the templating engine -->
             <!-- Properties of each article are accessible within this #each block simply
@@ -26,10 +17,10 @@
                     <img src="{{image}}" class="post-image" />
                 </div>
                 <div class="post-content">
-                    <time>{{formatDate date}}</time>
+                    <time>{{formatDate time}}</time>
                     <h2>{{title}}</h2>
-                    <summary>{{summary}}</summary>
-                    <a href="/blog/{{id}}" class="read-more">Read more ></a>
+                    <summary>{{{summary}}}</summary>
+                    <a href="/blog/post/{{id}}" class="read-more">Read more ></a>
                 </div>
             </article>
             {{/each}}

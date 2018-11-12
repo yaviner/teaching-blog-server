@@ -2,10 +2,10 @@
   "name": "blog_server",
   "version": "1.0.0",
   "description": "Simple blog with backing database",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "author": "Yair Aviner",
   "license": "MIT",
