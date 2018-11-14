@@ -1,5 +1,5 @@
 # Blog Server
-Barebones example blog for teaching purposes complete with authentication, backed by a MySQL database.
+Barebones example blog for teaching purposes complete with authentication (!), backed by a MySQL database.
 
 ## Prerequisites
 You must have a MySQL database available to connect to. It should have the following tables, at minimum:
