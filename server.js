@@ -266,7 +266,7 @@ function requireLoggedIn(req, res, next) {
 
 // SENDGRID TEST
 app.get('/mailtest', function (res, req) {
-    sgMail.setApiKey('process.env.SENDGRID_API_KEY');
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     const msg = {
         to: 'yaviner@gmail.com',
         from: 'yaviner@teachingfoodblog.com',
